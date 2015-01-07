@@ -1,6 +1,6 @@
 /**
  * jQuery plugin for adding, removing and making changes to CSS rules
- * 
+ *
  * @author Vimal Aravindashan
  * @version 0.3.6
  * @licensed MIT license
@@ -13,7 +13,7 @@
 		}($('<style type="text/css">*{}</style>').appendTo('head')[0]), /**< StyleSheet for adding new rules*/
 		_rules = ('cssRules' in _sheet) ? 'cssRules' : 'rules', /**< Attribute name for rules collection in a stylesheet */
 		vendorPrefixes = ["Webkit", "O", "Moz", "ms"]; /**< Case sensitive list of vendor specific prefixes */
-	
+
 	/**
 	 * @function filterStyleSheet
 	 * Filter a stylesheet based on accessibility and, ID or location
@@ -36,7 +36,7 @@
 			return false;
 		}
 	}
-	
+
 	/**
 	 * @function parseSelector
 	 * Splits a jQuery.stylesheet compatible selector into stylesheet filter and selector text
@@ -57,7 +57,7 @@
 			selectorText: normalizeSelector(selectorText.substr(1, selectorText.length-2))
 		};
 	}
-	
+
 	/**
 	 * @function normalizeSelector
 	 * Normalizes selectorText to work cross-browser
@@ -75,7 +75,7 @@
 		}
 		return selector.reverse().join(', ');
 	}
-	
+
 	/**
 	 * @function matchSelector
 	 * Matches given selector to selectorText of cssRule
@@ -88,7 +88,7 @@
 		if($.type(cssRule.selectorText) !== 'string') {
 			return false;
 		}
-		
+
 		if(cssRule.selectorText === selectorText) {
 			return true;
 		} else if (matchGroups === true) {
@@ -99,7 +99,7 @@
 			return false;
 		}
 	}
-	
+
 	/**
 	 * @function vendorPropName
 	 * Vendor prefixed style property name.
@@ -121,7 +121,7 @@
 		}
 		return name;
 	}
-	
+
 	/**
 	 * @function normalizeRule
 	 * Normalizes the CSSStyleRule object to work better across browsers
@@ -155,7 +155,61 @@
 			this.currentStyle = rule.style; //XXX: Hack for jQuery's curCSS()/getStyles() for IE7
 		};
 	}
-	
+
+	/*
+	 * https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration
+	 * http://stackoverflow.com/questions/2655925/how-to-apply-important-using-css
+	 */
+	$.support.nativeCSSStyleDeclaration = false;
+
+	try
+	{
+		if (typeof CSSStyleDeclaration.prototype.getPropertyValue === 'function' && typeof CSSStyleDeclaration.prototype.setProperty === 'function')
+		{
+			$.support.nativeCSSStyleDeclaration = true;
+		}
+	}
+	catch(e)
+	{
+		$.support.nativeCSSStyleDeclaration = false;
+	}
+
+	if (!$.support.nativeCSSStyleDeclaration)
+	{
+		(function(CSSStyleDeclaration){
+			// Escape regex chars with \
+			var escape = function(text) {
+				return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+			};
+
+			CSSStyleDeclaration.prototype.getPropertyValue = function(a) {
+				return this.getAttribute(a);
+			};
+
+			CSSStyleDeclaration.prototype.setProperty = function(styleName, value, priority) {
+				this.setAttribute(styleName, value);
+				var priority = typeof priority != 'undefined' ? priority : '';
+				if (priority != '') {
+					// Add priority manually
+					var rule = new RegExp(escape(styleName) + '\\s*:\\s*' + escape(value) +
+					'(\\s*;)?', 'gmi');
+					this.cssText =
+					this.cssText.replace(rule, styleName + ': ' + value + ' !' + priority + ';');
+				}
+			};
+
+			CSSStyleDeclaration.prototype.removeProperty = function(a) {
+				return this.removeAttribute(a);
+			};
+
+			CSSStyleDeclaration.prototype.getPropertyPriority = function(styleName) {
+				var rule = new RegExp(escape(styleName) + '\\s*:\\s*[^\\s]*\\s*!important(\\s*;)?', 'gmi');
+				return rule.test(this.cssText) ? 'important' : '';
+			};
+
+		})(CSSStyleDeclaration);
+	}
+
 	/**
 	 * @function insertRule
 	 * Cross-browser function for inserting rules
@@ -180,7 +234,7 @@
 			return -1;
 		}
 	}
-	
+
 	/**
 	 * @function deleteRule
 	 * Cross-browser function for deleting rules
@@ -215,13 +269,13 @@
 			});
 		}
 	}
-	
+
 	/**
 	 * jQuery.stylesheet
-	 * 
+	 *
 	 * Constructor/Factory method for initializing a jQuery.stylesheet object.
 	 * Includes a short-cut to apply style changes immediately.
-	 * @param {String} selector CSS rule selector text with optional stylesheet filter  
+	 * @param {String} selector CSS rule selector text with optional stylesheet filter
 	 * @param {String|Array|Object} name Name of style property to get/set.
 	 * Also accepts array of property names and object of name/value pairs.
 	 * @param {String} value If defined, then value of the style property
@@ -233,11 +287,11 @@
 		if(!(this instanceof $.stylesheet)) {
 			return new $.stylesheet(selector, name, value);
 		}
-		
+
 		this.init(selector);
 		return this.css(name, value);
 	};
-	
+
 	$.extend($.stylesheet, {
 		/**
 		 * @function jQuery.stylesheet.cssRules
@@ -261,7 +315,7 @@
 			});
 			return rules.reverse();
 		},
-		
+
 		/**
 		 * @function jQuery.stylesheet.camelCase
 		 * jQuery.camelCase is undocumented and could be removed at any point
@@ -271,13 +325,13 @@
 		camelCase: $.camelCase || function( str ) {
 			return str.replace(/-([\da-z])/g, function(a){return a.toUpperCase().replace('-','');});
 		},
-		
+
 		/**
 		 * Normalized CSS property names
 		 * jQuery.cssProps is undocumented and could be removed at any point
 		 */
 		cssProps: $.cssProps || {},
-		
+
 		/**
 		 * @function jQuery.styesheet.cssStyleName
 		 * @param {String} name Hypenated CSS property name
@@ -292,9 +346,9 @@
 					return $.cssProps[name];
 				}
 			}
-		}
+		},
 	});
-	
+
 	$.stylesheet.fn = $.stylesheet.prototype = {
 		/**
 		 * @function jQuery.stylesheet.fn.init
@@ -306,7 +360,7 @@
 		 */
 		init: function (selector) {
 			var rules = []; /**< Array of CSSStyleRule objects matching the selector initialized with */
-			
+
 			switch($.type(selector)) {
 			case 'string':
 				rules = $.stylesheet.cssRules(selector);
@@ -326,17 +380,17 @@
 				}
 				break;
 			}
-			
+
 			$.extend(this, {
 				/**
 				 * @function jQuery.stylesheet.rules
 				 * @returns {Array} Copy of array of CSSStyleRule objects used
-				 * by this instance of jQuery.stylesheet 
+				 * by this instance of jQuery.stylesheet
 				 */
 				rules: function() {
 					return rules.slice();
 				},
-				
+
 				/**
 				 * @function jQuery.stylesheet.css()
 				 * @param {String|Array|Object} name Name of style property to get/set.
@@ -348,7 +402,7 @@
 				 */
 				css: function (name, value) {
 					var self = this, styles = undefined;
-					
+
 					switch($.type(name)) {
 					case 'null':
 						$.each(rules, function (idx, rule) {
@@ -369,7 +423,7 @@
 								sheet = (sheet && sheet.length == 1) ? sheet[0] : _sheet;
 								insertRule.call(sheet, filters.selectorText, name+':'+value+';');
 								//NOTE: See above note on Safari
-								//      Also, IE has different behaviour for grouped selectors 
+								//      Also, IE has different behaviour for grouped selectors
 								rules = $.stylesheet.cssRules(selector);
 								styles = self;
 							} else {
@@ -408,9 +462,9 @@
 					default: /*undefined*/
 						return self;
 					}
-					
+
 					return styles;
-				}
+				},
 			});
 		}
 	};
