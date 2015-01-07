@@ -210,6 +210,22 @@
 		})(CSSStyleDeclaration);
 	}
 
+	var setRuleProperty = function (rule, stylename, value, stylename2)
+	{
+		if ($.support.nativeCSSStyleDeclaration)
+		{
+			rule.style.setProperty(stylename2 || stylename, value.value || value, value.priority || '');
+		}
+		else if (0 && _ret.priority)
+		{
+			rule.style[stylename] = value.value || value;
+		}
+		else
+		{
+			rule.style[stylename] = value.value || value;
+		}
+	};
+
 	/**
 	 * @function insertRule
 	 * Cross-browser function for inserting rules
@@ -353,16 +369,29 @@
 			var _ret = {
 				'value': value,
 				'originalValue': value,
-				'important': '',
+				'priority': '',
 			};
 
 			if (_m = value.match(/\s*(?:\!(important))\s*(?:\b|$)\s*/i))
 			{
-				_ret['value'] = value = value.replace(/\s*(?:\!(important))\s*(?:\b|$)\s*/i, '');
-				_ret['important'] = 'important';
+				_ret['value'] = value = value.replace(/\s*(?:\!\s*(important))\s*(?:\b|$)\s*/i, '');
+				_ret['priority'] = 'important';
 			}
 
 			return _ret;
+		},
+
+		/**
+		 * $.stylesheet.rcamelCase('msFilter') = '-ms-filter'
+		 * $.stylesheet.rcamelCase('fillOpacity') = 'fill-opacity'
+		 * $.stylesheet.rcamelCase('MozAnimation') = '-moz-animation'
+		 **/
+		rcamelCase: function (str)
+		{
+			return str
+				.replace(/([0-9A-Z])/g, function(a){return '-' + a.toLowerCase();})
+				.replace(/^ms-/, '-ms-')
+			;
 		},
 	});
 
@@ -444,10 +473,25 @@
 								rules = $.stylesheet.cssRules(selector);
 								styles = self;
 							} else {
+
+								var stylename2 = $.stylesheet.rcamelCase(stylename);
+
+								var _ret;
+
+								if(value !== undefined)
+								{
+									_ret = $.stylesheet.normalizeValue(value);
+								}
+
 								$.each(rules, function (i, rule) {
 									if(rule.style[stylename] !== '') {
 										if(value !== undefined) {
+											/*
 											rule.style[stylename] = value;
+											*/
+
+											setRuleProperty(rule, stylename, _ret, stylename2);
+
 											styles = self;
 										} else {
 											styles = rule.style[stylename];
@@ -456,7 +500,12 @@
 									}
 								});
 								if(styles === undefined && value !== undefined) {
+									/*
 									rules[0].style[stylename] = value;
+									*/
+
+									setRuleProperty(rules[0], stylename, _ret, stylename2);
+
 									styles = self;
 								}
 							}
