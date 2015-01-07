@@ -347,6 +347,23 @@
 				}
 			}
 		},
+
+		normalizeValue: function (value) {
+			var _m;
+			var _ret = {
+				'value': value,
+				'originalValue': value,
+				'important': '',
+			};
+
+			if (_m = value.match(/\s*(?:\!(important))\s*(?:\b|$)\s*/i))
+			{
+				_ret['value'] = value = value.replace(/\s*(?:\!(important))\s*(?:\b|$)\s*/i, '');
+				_ret['important'] = 'important';
+			}
+
+			return _ret;
+		},
 	});
 
 	$.stylesheet.fn = $.stylesheet.prototype = {
