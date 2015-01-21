@@ -10,7 +10,7 @@
 		_styles = _ahref.prop('style'), /**< Collection of styles available on the host */
 		_sheet = function(s) {
 			return s.sheet || s.styleSheet;
-		}($('<style type="text/css">*{}</style>').appendTo('head')[0]), /**< StyleSheet for adding new rules*/
+		}($('<style type="text/css" rel="jquery/stylesheet">*{}</style>').appendTo('head')[0]), /**< StyleSheet for adding new rules*/
 		_rules = ('cssRules' in _sheet) ? 'cssRules' : 'rules', /**< Attribute name for rules collection in a stylesheet */
 		vendorPrefixes = ["Webkit", "O", "Moz", "ms"]; /**< Case sensitive list of vendor specific prefixes */
 
